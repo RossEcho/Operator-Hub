@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snake Game</title>
+    <style>
+        body {
+            text-align: center;
+            font-family: Arial, sans-serif;
+            background-color: #0d1b2a;
+            color: white;
+        }
+        h1 {
+            color: #00aaff;
+        }
+        #gameContainer {
+            margin-top: 20px;
+        }
+        canvas {
+            background-color: #1b263b;
+            display: block;
+            margin: auto;
+            border: 3px solid #00aaff;
+        }
+        #scoreBoard {
+            font-size: 18px;
+            margin-top: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 18px;
+            margin-top: 10px;
+            border: none;
+            background-color: #0077cc;
+            color: white;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        button:hover {
+            background-color: #005fa3;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Snake Game</h1>
+    <div id="scoreBoard">
+        <p id="score">Score: 0</p>
+        <p id="highScore">High Score: 0</p>
+        <p id="speed">Speed: 200ms</p>
+    </div>
+    <button id="startButton">Start Game</button>
+    <div id="gameContainer">
+        <canvas id="gameCanvas" width="500" height="500"></canvas>
+    </div>
+
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        const startButton = document.getElementById("startButton");
+        const scoreDisplay = document.getElementById("score");
+        const highScoreDisplay = document.getElementById("highScore");
+        const speedDisplay = document.getElementById("speed");
+
+        const gridSize = 25;
+        let snake = [{ x: 250, y: 250 }];
+        let direction = "RIGHT";
+        let nextDirection = "RIGHT";
+        let food;
+        let score = 0;
+        let highScore = localStorage.getItem("highScore") || 0;
+        let gameRunning = false;
+        let gameInterval;
+        let speed = 200; // Start slower (200ms per move)
+
+        highScoreDisplay.innerText = "High Score: " + highScore;
+        speedDisplay.innerText = "Speed: " + speed + "ms";
+
+        function getRandomPosition() {
+            let position;
+            do {
+                position = {
+                    x: Math.floor(Math.random() * (canvas.width / gridSize)) * gridSize,
+                    y: Math.floor(Math.random() * (canvas.height / gridSize)) * gridSize
+                };
+            } while (isFoodInsideSnake(position)); // Ensure food never spawns inside the snake
+            return position;
+        }
+
+        function isFoodInsideSnake(position) {
+            return snake.some(segment => segment.x === position.x && segment.y === position.y);
+        }
+
+        function drawSnake() {
+            ctx.fillStyle = "#00ff00";
+            snake.forEach(segment => {
+                ctx.fillRect(segment.x, segment.y, gridSize, gridSize);
+            });
+        }
+
+        function drawFood() {
+            ctx.fillStyle = "#ff0000";
+            ctx.fillRect(food.x, food.y, gridSize, gridSize);
+        }
+
+        function moveSnake() {
+            if (!gameRunning) return;
+
+            let head = { ...snake[0] };
+            direction = nextDirection;
+
+            if (direction === "UP") head.y -= gridSize;
+            if (direction === "DOWN") head.y += gridSize;
+            if (direction === "LEFT") head.x -= gridSize;
+            if (direction === "RIGHT") head.x += gridSize;
+
+            snake.unshift(head);
+
+            if (head.x === food.x && head.y === food.y) {
+                score += 10;
+                scoreDisplay.innerText = "Score: " + score;
+                food = getRandomPosition();
+                increaseSpeed();
+            } else {
+                snake.pop();
+            }
+
+            if (head.x < 0 || head.x >= canvas.width || head.y < 0 || head.y >= canvas.height || checkCollision(head)) {
+                endGame();
+            }
+        }
+
+        function checkCollision(head) {
+            return snake.slice(1).some(segment => segment.x === head.x && segment.y === head.y);
+        }
+
+        function updateGame() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawFood();
+            drawSnake();
+            moveSnake();
+        }
+
+        function changeDirection(event) {
+            const key = event.key;
+            if ((key === "ArrowUp" || key === "w") && direction !== "DOWN") nextDirection = "UP";
+            if ((key === "ArrowDown" || key === "s") && direction !== "UP") nextDirection = "DOWN";
+            if ((key === "ArrowLeft" || key === "a") && direction !== "RIGHT") nextDirection = "LEFT";
+            if ((key === "ArrowRight" || key === "d") && direction !== "LEFT") nextDirection = "RIGHT";
+        }
+
+        function startGame() {
+            if (gameRunning) return;
+            gameRunning = true;
+            snake = [{ x: 250, y: 250 }];
+            direction = "RIGHT";
+            nextDirection = "RIGHT";
+            score = 0;
+            speed = 200; // Reset speed
+            scoreDisplay.innerText = "Score: 0";
+            food = getRandomPosition();
+            speedDisplay.innerText = "Speed: " + speed + "ms";
+            gameInterval = setInterval(updateGame, speed);
+        }
+
+        function increaseSpeed() {
+            if (score % 50 === 0 && speed > 50) { // Increase speed every 50 points, min speed 50ms
+                speed -= 10;
+                speedDisplay.innerText = "Speed: " + speed + "ms";
+                clearInterval(gameInterval);
+                gameInterval = setInterval(updateGame, speed);
+            }
+        }
+
+        function endGame() {
+            clearInterval(gameInterval);
+            gameRunning = false;
+            alert("Game Over! Your score: " + score);
+
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem("highScore", highScore);
+                highScoreDisplay.innerText = "High Score: " + highScore;
+            }
+        }
+
+        document.addEventListener("keydown", changeDirection);
+        startButton.addEventListener("click", startGame);
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>♟️ PvP Chess</title>
+  <style>
+    body {
+      background: #0D1B2A;
+      color: white;
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+
+    h1 {
+      margin-bottom: 10px;
+    }
+
+    #controls {
+      margin-bottom: 10px;
+    }
+
+    button {
+      margin: 0 5px;
+      padding: 6px 12px;
+      background: #1B263B;
+      color: white;
+      border: 1px solid #444;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    #chessboard {
+      display: grid;
+      grid-template-columns: repeat(8, 60px);
+      grid-template-rows: repeat(8, 60px);
+      border: 3px solid #333;
+      margin-bottom: 10px;
+    }
+
+    .cell {
+      width: 60px;
+      height: 60px;
+      font-size: 32px;
+      text-align: center;
+      line-height: 60px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .white { background: #eeeeee; color: black; }
+    .black { background: #555555; color: white; }
+    .selected { outline: 3px solid yellow; }
+    .highlight { background-color: rgba(255, 255, 0, 0.4); }
+
+    .status { margin: 10px; }
+
+    #history {
+      max-height: 120px;
+      overflow-y: auto;
+      border: 1px solid #888;
+      background: #1B263B;
+      padding: 10px;
+      width: 500px;
+      font-size: 14px;
+    }
+
+    .timers {
+      margin: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>♟️ Chess Game</h1>
+
+  <div id="controls">
+    <button onclick="undoMove()">Undo</button>
+    <button onclick="toggleHighlight()">Toggle Highlights</button>
+    <button onclick="toggleTimers()">Toggle Timers</button>
+    <button onclick="resetGame()">Reset Game</button>
+  </div>
+
+  <div id="chessboard"></div>
+
+  <div class="timers">
+    ⏱️ White: <span id="whiteTimer">00:00</span> | Black: <span id="blackTimer">00:00</span>
+  </div>
+
+  <div class="status" id="status">White's turn</div>
+
+  <div id="history"><strong>Move History:</strong><br></div>
+
+  <script>
+    const board = document.getElementById("chessboard");
+    const status = document.getElementById("status");
+    const historyBox = document.getElementById("history");
+    const whiteTimer = document.getElementById("whiteTimer");
+    const blackTimer = document.getElementById("blackTimer");
+
+    let selected = null;
+    let turn = "white";
+    let moveHistory = [];
+    let highlightEnabled = false;
+    let timerEnabled = false;
+
+    let whiteTime = 0;
+    let blackTime = 0;
+
+    const initialBoard = [
+      "♜", "♞", "♝", "♛", "♚", "♝", "♞", "♜",
+      "♟", "♟", "♟", "♟", "♟", "♟", "♟", "♟",
+      "", "", "", "", "", "", "", "",
+      "", "", "", "", "", "", "", "",
+      "", "", "", "", "", "", "", "",
+      "", "", "", "", "", "", "", "",
+      "♙", "♙", "♙", "♙", "♙", "♙", "♙", "♙",
+      "♖", "♘", "♗", "♕", "♔", "♗", "♘", "♖"
+    ];
+
+    const cellColors = [];
+    for (let row = 0; row < 8; row++) {
+      for (let col = 0; col < 8; col++) {
+        cellColors.push((row + col) % 2 === 0 ? "white" : "black");
+      }
+    }
+
+    function renderBoard() {
+      board.innerHTML = "";
+      for (let i = 0; i < 64; i++) {
+        const cell = document.createElement("div");
+        cell.className = `cell ${cellColors[i]}`;
+        cell.textContent = initialBoard[i];
+        cell.dataset.index = i;
+
+        if (highlightEnabled && selected !== null && i !== selected && initialBoard[i] === "") {
+          cell.classList.add("highlight");
+        }
+
+        cell.onclick = () => handleClick(i);
+        board.appendChild(cell);
+      }
+      if (selected !== null) {
+        board.children[selected].classList.add("selected");
+      }
+    }
+
+    function handleClick(i) {
+      const piece = initialBoard[i];
+      const isWhitePiece = piece >= "♙" && piece <= "♖";
+      const isBlackPiece = piece >= "♟" && piece <= "♜";
+
+      if (selected === null) {
+        if ((turn === "white" && isWhitePiece) || (turn === "black" && isBlackPiece)) {
+          selected = i;
+        }
+      } else {
+        if (i !== selected) {
+          moveHistory.push([...initialBoard]);
+          initialBoard[i] = initialBoard[selected];
+          initialBoard[selected] = "";
+          turn = turn === "white" ? "black" : "white";
+          status.textContent = `${turn[0].toUpperCase() + turn.slice(1)}'s turn`;
+          historyBox.innerHTML += `<div>${initialBoard[i]} from ${indexToCoord(selected)} to ${indexToCoord(i)}</div>`;
+        }
+        selected = null;
+      }
+      renderBoard();
+    }
+
+    function undoMove() {
+      if (moveHistory.length > 0) {
+        const last = moveHistory.pop();
+        for (let i = 0; i < 64; i++) {
+          initialBoard[i] = last[i];
+        }
+        turn = turn === "white" ? "black" : "white";
+        status.textContent = `${turn[0].toUpperCase() + turn.slice(1)}'s turn`;
+        selected = null;
+        renderBoard();
+      }
+    }
+
+    function toggleHighlight() {
+      highlightEnabled = !highlightEnabled;
+      renderBoard();
+    }
+
+    function toggleTimers() {
+      timerEnabled = !timerEnabled;
+    }
+
+    function resetGame() {
+      const confirmReset = confirm("Are you sure you want to reset the game?");
+      if (!confirmReset) return;
+
+      initialBoard.splice(0, 64, ...[
+        "♜", "♞", "♝", "♛", "♚", "♝", "♞", "♜",
+        "♟", "♟", "♟", "♟", "♟", "♟", "♟", "♟",
+        "", "", "", "", "", "", "", "",
+        "", "", "", "", "", "", "", "",
+        "", "", "", "", "", "", "", "",
+        "", "", "", "", "", "", "", "",
+        "♙", "♙", "♙", "♙", "♙", "♙", "♙", "♙",
+        "♖", "♘", "♗", "♕", "♔", "♗", "♘", "♖"
+      ]);
+
+      selected = null;
+      turn = "white";
+      whiteTime = 0;
+      blackTime = 0;
+      moveHistory = [];
+      status.textContent = "White's turn";
+      historyBox.innerHTML = "<strong>Move History:</strong><br>";
+      whiteTimer.textContent = "00:00";
+      blackTimer.textContent = "00:00";
+      renderBoard();
+    }
+
+    function indexToCoord(index) {
+      const col = "abcdefgh"[index % 8];
+      const row = 8 - Math.floor(index / 8);
+      return col + row;
+    }
+
+    function updateTimers() {
+      if (!timerEnabled) return;
+
+      if (turn === "white") whiteTime++;
+      else blackTime++;
+
+      whiteTimer.textContent = formatTime(whiteTime);
+      blackTimer.textContent = formatTime(blackTime);
+    }
+
+    function formatTime(sec) {
+      const m = String(Math.floor(sec / 60)).padStart(2, '0');
+      const s = String(sec % 60).padStart(2, '0');
+      return `${m}:${s}`;
+    }
+
+    renderBoard();
+    setInterval(updateTimers, 1000);
+  </script>
+</body>
+</html>

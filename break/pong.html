@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pong: Corrected Controls</title>
+  <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      background: #1b1e3d;
+      color: white;
+      font-family: sans-serif;
+    }
+    #game-controls {
+      margin: 20px;
+      display: flex;
+      gap: 10px;
+    }
+    #game-controls button, #winning-score-input, #difficulty-select {
+      padding: 10px 15px;
+      font-size: 16px;
+      border: 2px solid #4a6fa5;
+      background: #1e223b;
+      color: white;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    #game-controls button:hover, #winning-score-input:hover, #difficulty-select:hover {
+      background: #4a6fa5;
+      color: black;
+    }
+    #scoreboard {
+      margin: 20px;
+      font-size: 24px;
+      color: #f0f8ff;
+      text-shadow: 0px 0px 5px #4a6fa5;
+    }
+    canvas {
+      background: #1e223b;
+      border: 2px solid #4a6fa5;
+      box-shadow: 0px 0px 15px 2px #4a6fa5;
+    }
+  </style>
+</head>
+<body>
+  <div id="game-controls">
+    <button id="start-button">Start Game</button>
+    <button id="switch-button">Switch to 2 Players</button>
+    <input id="winning-score-input" type="number" placeholder="Winning score" min="1" />
+    <select id="difficulty-select">
+      <option value="easy">Easy</option>
+      <option value="medium" selected>Medium</option>
+      <option value="hard">Hard</option>
+    </select>
+  </div>
+  <div id="scoreboard">
+    Player 1: <span id="player1-score">0</span> | Player 2: <span id="player2-score">0</span>
+  </div>
+  <canvas id="pong" width="800" height="400"></canvas>
+  <script>
+    const canvas = document.getElementById('pong');
+    const ctx = canvas.getContext('2d');
+    const startButton = document.getElementById('start-button');
+    const switchButton = document.getElementById('switch-button');
+    const winningScoreInput = document.getElementById('winning-score-input');
+    const difficultySelect = document.getElementById('difficulty-select');
+    const player1ScoreElem = document.getElementById('player1-score');
+    const player2ScoreElem = document.getElementById('player2-score');
+
+    const paddleWidth = 100, paddleHeight = 10;
+    const ballSize = 10;
+
+    let player1, player2, ball;
+    let speedMultiplier = 1.0;
+    let isRunning = false;
+    let isTwoPlayerMode = false;
+    let player1Score = 0;
+    let player2Score = 0;
+    let winningScore = 5;
+    let difficulty = "medium";
+
+    function resetPositions() {
+      player1 = { x: canvas.width / 2 - paddleWidth / 2, y: 0, width: paddleWidth, height: paddleHeight, dx: 0 };
+      player2 = { x: canvas.width / 2 - paddleWidth / 2, y: canvas.height - paddleHeight, width: paddleWidth, height: paddleHeight, dx: 0 };
+      ball = { x: canvas.width / 2, y: canvas.height / 2, width: ballSize, height: ballSize, dx: 4, dy: 4 };
+    }
+
+    function drawRect(x, y, width, height, color) {
+      ctx.fillStyle = color;
+      ctx.fillRect(x, y, width, height);
+    }
+
+    function drawCircle(x, y, size, color) {
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(x, y, size, 0, Math.PI * 2);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    function update() {
+      if (!isRunning) return;
+
+      // Move player 1 paddle
+      player1.x += player1.dx;
+      if (player1.x < 0) player1.x = 0;
+      if (player1.x + player1.width > canvas.width) player1.x = canvas.width - player1.width;
+
+      // Move player 2 paddle
+      if (isTwoPlayerMode) {
+        player2.x += player2.dx;
+        if (player2.x < 0) player2.x = 0;
+        if (player2.x + player2.width > canvas.width) player2.x = canvas.width - player2.width;
+      } else {
+        let speed;
+        if (difficulty === "easy") speed = 3;
+        else if (difficulty === "medium") speed = 6;
+        else if (difficulty === "hard") speed = 10;
+
+        if (ball.x > player2.x + player2.width / 2) {
+          player2.x += speed;
+        } else {
+          player2.x -= speed;
+        }
+        if (player2.x < 0) player2.x = 0;
+        if (player2.x + player2.width > canvas.width) player2.x = canvas.width - player2.width;
+      }
+
+      // Move ball
+      ball.x += ball.dx * speedMultiplier;
+      ball.y += ball.dy * speedMultiplier;
+
+      // Ball collisions with walls
+      if (ball.x < 0 || ball.x + ball.width > canvas.width) {
+        ball.dx *= -1;
+      }
+
+      // Ball collisions with paddles
+      if (ball.y < player1.y + player1.height &&
+          ball.x + ball.width > player1.x &&
+          ball.x < player1.x + player1.width) {
+        ball.dy *= -1;
+        speedMultiplier += 0.05;
+      }
+
+      if (ball.y + ball.height > player2.y &&
+          ball.x + ball.width > player2.x &&
+          ball.x < player2.x + player2.width) {
+        ball.dy *= -1;
+        speedMultiplier += 0.05;
+      }
+
+      // Reset ball if it goes past the paddles
+      if (ball.y < 0) {
+        player2Score++;
+        updateScores();
+        resetPositions();
+        if (player2Score >= winningScore) endGame("Player 2 wins!");
+      } else if (ball.y > canvas.height) {
+        player1Score++;
+        updateScores();
+        resetPositions();
+        if (player1Score >= winningScore) endGame("Player 1 wins!");
+      }
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Draw paddles
+      drawRect(player1.x, player1.y, player1.width, player1.height, '#7cb4eb');
+      drawRect(player2.x, player2.y, player2.width, player2.height, '#7cb4eb');
+
+      // Draw ball
+      drawCircle(ball.x + ball.width / 2, ball.y + ball.height / 2, ball.width / 2, '#f0f8ff');
+    }
+
+    function loop() {
+      update();
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    function updateScores() {
+      player1ScoreElem.textContent = player1Score;
+      player2ScoreElem.textContent = player2Score;
+    }
+
+    function endGame(message) {
+      alert(message);
+      isRunning = false;
+      resetPositions();
+    }
+
+    // Event listeners for paddles
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowLeft') {
+        player1.dx = -5;
+      } else if (e.key === 'ArrowRight') {
+        player1.dx = 5;
+      }
+
+      if (isTwoPlayerMode) {
+        if (e.key === 'w' || e.key === 'W') {
+          player2.dx = -5;
+        } else if (e.key === 's' || e.key === 'S') {
+          player2.dx = 5;
+        }
+      }
+    });
+
+    document.addEventListener('keyup', (e) => {
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+        player1.dx = 0;
+      }
+      if (isTwoPlayerMode && (e.key === 'w' || e.key === 'W' || e.key === 's' || e.key === 'S')) {
+        player2.dx = 0;
+      }
+    });
+
+    // Start button event
+    startButton.addEventListener('click', () => {
+      const inputWinningScore = parseInt(winningScoreInput.value, 10);
+      if (inputWinningScore && inputWinningScore > 0) {
+        winningScore = inputWinningScore;
+      }
+      player1Score = 0;
+      player2Score = 0;
+      updateScores();
+      isRunning = true;
+      resetPositions();
+    });
+
+    // Switch to 2 player button event
+    switchButton.addEventListener('click', () => {
+      isTwoPlayerMode = !isTwoPlayerMode;
+      switchButton.textContent = isTwoPlayerMode ? "Switch to 1 Player" : "Switch to 2 Players";
+    });
+
+    // Difficulty selector event
+    difficultySelect.addEventListener('change', (e) => {
+      difficulty = e.target.value;
+    });
+
+    resetPositions();
+    loop();
+  </script>
+</body>
+</html>

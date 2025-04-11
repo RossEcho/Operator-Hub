@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Machine Status Auto-Refresh</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <div id="welcomeBanner" class="welcome-banner">Metrology Operator Hub</div>
+
+    <!-- Navigation Bar -->
+    <div class="navbar">
+        <a href="#" target="_blank">Home</a>
+        <a href="#" target="_blank">TMS</a>
+        <a href="#" target="_blank">Manual Run</a>
+        <a href="#" target="_blank">Photo DB</a>
+        <a href="#" target="_blank">ESP</a>
+        <a href="#" target="_blank">HilanNet</a>
+        <a href="#" target="_blank">Outlook</a>
+	      <a href="#" target="_blank">Who is?</a>
+	<!-- Phone Book Toggle Button -->
+	<div class="navbar-right">
+	  <div class="phonebook-wrapper">
+  	    <button id="phoneBookBtn" class="phonebook-button">📞 Phone Book</button>
+  	    <div id="phoneBookPanel" class="phonebook-panel">
+    	      <h3>Contacts</h3>
+    	      <ul>
+      	        <li><strong>CELL02/09:</strong> XXXX</li>
+                <li><strong>CELL03/11:</strong> XXXX</li>
+                <li><strong>CELL04/12:</strong> XXXX</li>
+                <li><strong>CELL06:</strong> XXXX</li>
+                <li><strong>CELL08/10:</strong> XXXX</li>
+                <li><strong>CELL05/23:</strong> XXXX</li>
+                <li><strong>CELL07/24:</strong> XXXX</li>
+                <li><strong>CELL13:</strong> XXXX</li>
+                <li><strong>CELL21:</strong> XXXX</li>
+                <li><strong>CELL27/25:</strong> XXXX</li>
+                <li><strong>CELL26:</strong> XXXX</li>
+                <li><strong>CELL29:</strong> XXXX</li>
+                <li><strong>CELL30:</strong> XXXX</li>
+                <li><strong>GF:</strong> XXXX</li>
+                <li><strong>SAM:</strong> XXXX</li>
+                <li><strong>Leader:</strong> XXXX</li>
+                <li><strong>T. Leader:</strong> XXX-XXXX-XXX</li>
+                <li><strong>Photo E.T:</strong> XXX-XXXX-XXX / XXXX / XXXX</li>
+                <li><strong>Metrology ET:</strong> XXX-XXXX-XXX</li>
+                <li><strong>ALG:</strong> XXXX</li>
+                <li><strong>SCD:</strong> XXXX</li>
+                <li><strong>DIS:</strong> XXXX</li>
+                <li><strong>K.LUV:</strong> XXXX</li>
+                <li><strong>T. Chemical:</strong> XXX-XXXX-XXX</li>
+                <li><strong>MASK BAY:</strong> XXXX</li>
+             </ul>
+           </div>
+          </div>
+	<div class="shiftcalendar-wrapper">
+	  <button id="shiftCalendarBtn" class="shiftcalendar-button">📆 Shift Calendar</button>
+	  <div id="shiftCalendarPanel" class="shiftcalendar-panel">
+	    <div id="calendarHeader">
+	      <button id="prevMonthBtn">‹</button>
+	      <span id="calendarMonthYear"></span>
+	      <button id="nextMonthBtn">›</button>
+	    </div>
+    
+	    <!-- Shift Selector -->
+	    <label for="shiftSelector" style="font-size: 14px;">View schedule for:</label>
+	    <select id="shiftSelector">
+	      <option value="1">Shift 1</option>
+	      <option value="2" selected>Shift 2</option>
+	      <option value="3">Shift 3</option>
+	      <option value="4">Shift 4</option>
+	    </select>
+
+	    <table id="shiftCalendarTable"></table>
+	  </div>
+	</div>
+          <button id="breakTimeBtn" class="break-time">Break Time</button>
+	</div>
+	
+    </div>
+
+    <!-- Main Content Split -->
+    <div class="container">
+        <!-- Left Side: IFrame -->
+        <div class="content">
+	  <div class="iframe-wrapper">
+              <iframe id="refreshFrame" src="place_holder.png"></iframe>
+          </div>
+	</div>
+
+        <!-- Right Side: Clock & Notepad -->
+        <div class="side-panel">
+          <!-- Digital Clock -->
+          <div id="digitalClock"></div>
+
+          <!-- Analog Clock -->
+          <div class="analog-clock">
+            <div class="hand hour"></div>
+            <div class="hand minute"></div>
+            <div class="hand second"></div>
+          </div>
+
+          <!-- Break Message -->
+          <div id="breakMessage" class="hidden"></div>
+
+          <!-- Notepad -->
+          <textarea id="notepad" placeholder="Quick Notes..."></textarea>
+          <button id="clearNotes">Clear</button>
+
+	  <!-- Sun/Moon Animation -->
+          <div class="sky-bar">
+            <div id="sunMoonContainer">
+              <!-- Sun -->
+              <svg id="sunIcon" class="sun-icon float" viewBox="0 0 64 64" width="24" height="24">
+                <!-- Core Sun -->
+                <circle cx="32" cy="32" r="12" fill="#FFD700" />
+
+                <!-- Sun rays (simple lines radiating out) -->
+                <g stroke="#FFA500" stroke-width="2">
+                  <line x1="32" y1="8" x2="32" y2="0" />
+                  <line x1="32" y1="56" x2="32" y2="64" />
+                  <line x1="8" y1="32" x2="0" y2="32" />
+                  <line x1="56" y1="32" x2="64" y2="32" />
+                  <line x1="12" y1="12" x2="6" y2="6" />
+                  <line x1="52" y1="12" x2="58" y2="6" />
+                  <line x1="12" y1="52" x2="6" y2="58" />
+                  <line x1="52" y1="52" x2="58" y2="58" />
+                </g>
+              </svg>
+
+              <!-- Moon -->
+              <svg id="moonIcon" class="moon-icon float" viewBox="0 0 64 64" width="24" height="24" style="display:none;">
+                <!-- Main bright circle -->
+                <circle cx="32" cy="32" r="12" fill="#E0E8FF" />
+
+                <!-- Shadow (to create a crescent feel) -->
+                <circle cx="36" cy="32" r="12" fill="#1B263B" />
+
+                <!-- Craters -->
+                <circle cx="28" cy="28" r="1.5" fill="#B0C8FF" opacity="0.6" />
+                <circle cx="34" cy="36" r="1" fill="#B0C8FF" opacity="0.4" />
+                <circle cx="30" cy="38" r="0.8" fill="#C8D8FF" opacity="0.5" />
+              </svg>
+            </div>
+          </div>
+
+	  <!-- Shift Progress Bar -->
+          <div class="progress-container">
+            <div id="shiftProgress" class="progress-bar"></div>
+          </div>
+          <div id="shiftPercentage" class="shift-text"></div>
+        
+
+          <!-- Quote Display -->
+          <div id="quoteBox" class="quote-box">Loading quote...</div>
+          
+	  <div class="weather-professional-button">
+  		<a href="https://www.msn.com/en-us/weather/today/Migdal-Haemek,North-District,Israel/we-city?iso=IL" 
+     		target="_blank" 
+     		title="View weather in Migdal HaEmek">
+		    <svg class="weather-icon" viewBox="0 0 24 24" width="24" height="24" fill="#FFD700" xmlns="http://www.w3.org/2000/svg">
+		     <circle cx="12" cy="12" r="5"/>
+ 		     <line x1="12" y1="1" x2="12" y2="4" stroke="#FFD700" stroke-width="2"/>
+ 		     <line x1="12" y1="20" x2="12" y2="23" stroke="#FFD700" stroke-width="2"/>
+ 		     <line x1="1" y1="12" x2="4" y2="12" stroke="#FFD700" stroke-width="2"/>
+ 		     <line x1="20" y1="12" x2="23" y2="12" stroke="#FFD700" stroke-width="2"/>
+  		   <line x1="4.2" y1="4.2" x2="6.3" y2="6.3" stroke="#FFD700" stroke-width="2"/>
+    		 <line x1="17.7" y1="17.7" x2="19.8" y2="19.8" stroke="#FFD700" stroke-width="2"/>
+		     <line x1="4.2" y1="19.8" x2="6.3" y2="17.7" stroke="#FFD700" stroke-width="2"/>
+		     <line x1="17.7" y1="6.3" x2="19.8" y2="4.2" stroke="#FFD700" stroke-width="2"/>
+		    </svg>
+ 		   <span class="weather-label">Weather – Migdal HaEmek</span>
+		  </a>
+		</div>
+
+
+        </div>
+      </div>
+
+    <!-- Game Panel -->
+    <div id="gamePanel">
+        <h2>🎮 Break Time Games</h2>
+        <ul>
+            <li><a href="break/ekans.html" target="_blank">🐍 Play Snake</a></li>
+            <li><a href="break/tic_tac.html" target="_blank">❌⭕ Play Tic-Tac-Toe</a></li>
+            <li><a href="break/pong.html" target="_blank">🏓 Play Pong</a></li>
+	          <li><a href="break/coin_flip.html" target="_blank">&#9898; Coin Flip</a></li>
+	          <li><a href="break/dino.html" target="_blank">&#129430; Dino Jump</a></li>
+        </ul>
+        <button id="breakOverBtn">Break Time Over</button>
+    </div>
+    
+    <div id="credit">
+        <a>Compiled By Ross.M</a>
+    </div>
+
+    <script src="script.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>🦕 Dino Runner</title>
+  <style>
+    body {
+      margin: 0;
+      background: #0D1B2A;
+      color: white;
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    h1 {
+      color: #FFD700;
+      margin-bottom: 10px;
+    }
+
+    #game {
+      position: relative;
+      width: 800px;
+      height: 200px;
+      background: #1B263B;
+      border: 2px solid #162447;
+      overflow: hidden;
+    }
+
+    #dino {
+      position: absolute;
+      bottom: 0;
+      left: 50px;
+      font-size: 40px;
+      animation: run-bounce 0.3s infinite;
+      transform: scaleX(-1);
+    }
+
+    @keyframes run-bounce {
+      0% { transform: scaleX(-1) translateY(0); }
+      50% { transform: scaleX(-1) translateY(-4px); }
+      100% { transform: scaleX(-1) translateY(0); }
+    }
+
+    .cactus, .bird {
+      position: absolute;
+      bottom: 0;
+      font-size: 30px;
+    }
+
+    .bird {
+      bottom: 60px;
+    }
+
+    #score {
+      margin-top: 15px;
+      font-size: 20px;
+      color: #00FFAA;
+    }
+
+    #restart {
+      display: none;
+      margin-top: 10px;
+      background: #FF4444;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      cursor: pointer;
+      font-size: 16px;
+      border-radius: 5px;
+    }
+
+    #restart:hover {
+      background-color: #CC0000;
+    }
+  </style>
+</head>
+<body>
+
+<h1>🦕 Dino Runner</h1>
+<div id="game">
+  <div id="dino">🦕</div>
+</div>
+<div id="score">Score: 0</div>
+<button id="restart">Restart</button>
+
+<script>
+  const dino = document.getElementById("dino");
+  const game = document.getElementById("game");
+  const scoreText = document.getElementById("score");
+  const restartBtn = document.getElementById("restart");
+
+  let isJumping = false;
+  let jumpCount = 0;
+  let canDoubleJump = true;
+  let position = 0;
+  let score = 0;
+  let speed = 5;
+  let cactusTimer;
+
+  function jump() {
+    if (jumpCount >= 2) return;
+    jumpCount++;
+
+    if (!isJumping) isJumping = true;
+
+    const jumpPower = jumpCount === 1 ? 80 : 50;
+    let upVelocity = 5;
+    let upInterval = setInterval(() => {
+      if (position >= jumpPower * jumpCount) {
+        clearInterval(upInterval);
+
+        let downInterval = setInterval(() => {
+          if (position <= 0) {
+            clearInterval(downInterval);
+            position = 0;
+            dino.style.bottom = "0px";
+            jumpCount = 0;
+            isJumping = false;
+          } else {
+            position -= 5;
+            dino.style.bottom = position + "px";
+          }
+        }, 20);
+      } else {
+        position += upVelocity;
+        dino.style.bottom = position + "px";
+      }
+    }, 20);
+  }
+
+  function createObstacle() {
+    let count = Math.random() < 0.3 ? 2 : 1;
+    for (let i = 0; i < count; i++) {
+      setTimeout(() => {
+        const obstacle = document.createElement("div");
+        const isBird = score >= 20 && Math.random() < 0.3;
+        obstacle.classList.add(isBird ? "bird" : "cactus");
+        obstacle.textContent = isBird ? "🐦" : "🌵";
+        game.appendChild(obstacle);
+
+        let obstaclePosition = 800;
+        obstacle.style.left = obstaclePosition + "px";
+
+        let moveInterval = setInterval(() => {
+          if (obstaclePosition < -40) {
+            clearInterval(moveInterval);
+            game.removeChild(obstacle);
+            score++;
+            scoreText.textContent = "Score: " + score;
+            if (score % 5 === 0 && speed < 20) speed += 0.5;
+          } else if (
+            obstaclePosition > 50 && obstaclePosition < 90 &&
+            ((obstacle.classList.contains("cactus") && position < 40) ||
+            (obstacle.classList.contains("bird") && position < 100))
+          ) {
+            clearInterval(moveInterval);
+            clearTimeout(cactusTimer);
+            document.removeEventListener("keydown", handleKey);
+            document.removeEventListener("touchstart", handleTap);
+            restartBtn.style.display = "inline-block";
+            scoreText.textContent = "Game Over! Final Score: " + score;
+          } else {
+            obstaclePosition -= speed;
+            obstacle.style.left = obstaclePosition + "px";
+          }
+        }, 20);
+      }, i * 200); // small offset between multi-cactus
+    }
+
+    const nextDelay = Math.floor(Math.random() * 800) + 1200; // 1200–2000ms
+    cactusTimer = setTimeout(createObstacle, nextDelay);
+  }
+
+  function handleKey(e) {
+    if (e.code === "Space") jump();
+  }
+
+  function handleTap() {
+    jump();
+  }
+
+  function startGame() {
+    score = 0;
+    speed = 5;
+    position = 0;
+    jumpCount = 0;
+    canDoubleJump = true;
+    dino.style.bottom = "0px";
+    scoreText.textContent = "Score: 0";
+    restartBtn.style.display = "none";
+    document.addEventListener("keydown", handleKey);
+    document.addEventListener("touchstart", handleTap);
+    document.querySelectorAll(".cactus, .bird").forEach(e => e.remove());
+    clearTimeout(cactusTimer);
+    cactusTimer = setTimeout(createObstacle, 800);
+  }
+
+  restartBtn.addEventListener("click", startGame);
+  startGame();
+</script>
+</body>
+</html>

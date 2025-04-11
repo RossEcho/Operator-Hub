@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Tic Tac Toe - Break Time</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+      background-color: #0D1B2A;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+
+    h1 {
+      color: #FFD700;
+      margin-bottom: 10px;
+    }
+
+    .mode-select {
+      margin-bottom: 20px;
+    }
+
+    select {
+      font-size: 16px;
+      padding: 5px 10px;
+      background-color: #1B263B;
+      color: white;
+      border: 1px solid #162447;
+    }
+
+    .board {
+      display: grid;
+      grid-template-columns: repeat(3, 100px);
+      grid-template-rows: repeat(3, 100px);
+      gap: 10px;
+    }
+
+    .cell {
+      width: 100px;
+      height: 100px;
+      background-color: #1B263B;
+      border: 2px solid #162447;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 48px;
+      color: #FFA500;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .cell:hover {
+      background-color: #23395B;
+    }
+
+    #message {
+      margin-top: 20px;
+      font-size: 20px;
+      color: #00FFAA;
+    }
+
+    #resetBtn {
+      margin-top: 15px;
+      padding: 10px 20px;
+      background-color: #FF4444;
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-size: 16px;
+      border-radius: 5px;
+    }
+
+    #resetBtn:hover {
+      background-color: #CC0000;
+    }
+  </style>
+</head>
+<body>
+  <h1>Tic Tac Toe</h1>
+
+  <div class="mode-select">
+    <label for="mode">Mode: </label>
+    <select id="mode">
+      <option value="ai">Single Player (vs AI)</option>
+      <option value="2p">Two Players</option>
+    </select>
+  </div>
+
+  <div class="board" id="board"></div>
+  <div id="message"></div>
+  <button id="resetBtn">Restart Game</button>
+
+  <script>
+    const board = document.getElementById("board");
+    const message = document.getElementById("message");
+    const resetBtn = document.getElementById("resetBtn");
+    const modeSelect = document.getElementById("mode");
+
+    let cells = [];
+    let currentPlayer = "X";
+    let gameOver = false;
+    let mode = "ai";
+
+    function createBoard() {
+      board.innerHTML = "";
+      cells = [];
+      gameOver = false;
+      currentPlayer = "X";
+      mode = modeSelect.value;
+      message.textContent = mode === "ai" ? "Your turn (X)" : "Player X's turn";
+
+      for (let i = 0; i < 9; i++) {
+        const cell = document.createElement("div");
+        cell.classList.add("cell");
+        cell.addEventListener("click", () => handleClick(i));
+        board.appendChild(cell);
+        cells.push(cell);
+      }
+    }
+
+    function handleClick(index) {
+      if (cells[index].textContent || gameOver) return;
+
+      cells[index].textContent = currentPlayer;
+
+      if (checkWinner(currentPlayer)) {
+        message.textContent = `${mode === "2p" || currentPlayer === "X" ? currentPlayer : "AI"} wins!`;
+        gameOver = true;
+        return;
+      }
+
+      if (isDraw()) {
+        message.textContent = "It's a draw!";
+        gameOver = true;
+        return;
+      }
+
+      if (mode === "ai") {
+        if (currentPlayer === "X") {
+          message.textContent = "AI thinking...";
+          currentPlayer = "O";
+          setTimeout(() => handleAIMove(), 300);
+        }
+      } else {
+        currentPlayer = currentPlayer === "X" ? "O" : "X";
+        message.textContent = `Player ${currentPlayer}'s turn`;
+      }
+    }
+
+    function handleAIMove() {
+      if (gameOver) return;
+
+      let move = findBestMove();
+      if (move !== null) {
+        cells[move].textContent = "O";
+
+        if (checkWinner("O")) {
+          message.textContent = "AI wins!";
+          gameOver = true;
+        } else if (isDraw()) {
+          message.textContent = "It's a draw!";
+          gameOver = true;
+        } else {
+          currentPlayer = "X";
+          message.textContent = "Your turn (X)";
+        }
+      }
+    }
+
+    function findBestMove() {
+      for (let i = 0; i < 9; i++) {
+        if (!cells[i].textContent) {
+          cells[i].textContent = "O";
+          if (checkWinner("O")) {
+            cells[i].textContent = "";
+            return i;
+          }
+          cells[i].textContent = "";
+        }
+      }
+
+      for (let i = 0; i < 9; i++) {
+        if (!cells[i].textContent) {
+          cells[i].textContent = "X";
+          if (checkWinner("X")) {
+            cells[i].textContent = "";
+            return i;
+          }
+          cells[i].textContent = "";
+        }
+      }
+
+      for (let i = 0; i < 9; i++) {
+        if (!cells[i].textContent) return i;
+      }
+
+      return null;
+    }
+
+    function checkWinner(player) {
+      const winCombos = [
+        [0,1,2],[3,4,5],[6,7,8],
+        [0,3,6],[1,4,7],[2,5,8],
+        [0,4,8],[2,4,6]
+      ];
+      return winCombos.some(([a,b,c]) =>
+        cells[a].textContent === player &&
+        cells[b].textContent === player &&
+        cells[c].textContent === player
+      );
+    }
+
+    function isDraw() {
+      return cells.every(cell => cell.textContent);
+    }
+
+    resetBtn.addEventListener("click", createBoard);
+    modeSelect.addEventListener("change", createBoard);
+    createBoard();
+  </script>
+</body>
+</html>

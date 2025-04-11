@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Coin Flip - Break Time</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #0D1B2A;
+      color: white;
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+
+    h1 {
+      color: #FFD700;
+      margin-bottom: 30px;
+    }
+
+    #coin {
+      font-size: 100px;
+      margin: 30px;
+      transition: transform 0.6s ease-in-out;
+    }
+
+    #result {
+      font-size: 32px;
+      margin-top: 10px;
+      color: #FFA500;
+    }
+
+    #flipBtn {
+      padding: 12px 24px;
+      font-size: 18px;
+      background: linear-gradient(90deg, #FFD700, #FFA500);
+      color: black;
+      font-weight: bold;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    #flipBtn:hover {
+      box-shadow: 0px 0px 10px rgba(255, 215, 0, 0.7);
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Coin Flip</h1>
+  <div id="coin">🪙</div>
+  <div id="result">Click Flip to Start</div>
+  <button id="flipBtn">Flip Coin</button>
+
+  <script>
+    const coin = document.getElementById("coin");
+    const result = document.getElementById("result");
+    const flipBtn = document.getElementById("flipBtn");
+
+    flipBtn.addEventListener("click", () => {
+      coin.style.transform = "rotateY(720deg)";
+      result.textContent = "Flipping...";
+
+      setTimeout(() => {
+        const outcome = Math.random() < 0.5 ? "Heads" : "Tails";
+        coin.textContent = outcome === "Heads" ? "🙂" : "🦅";
+        result.textContent = outcome;
+        coin.style.transform = "rotateY(0deg)";
+      }, 600);
+    });
+  </script>
+</body>
+</html>
